@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: theme("fontFamily.body");
+    background: #050a12;
+    color: white;
+    overflow: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: rgba(255, 107, 0, 0.35);
+    color: white;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.leaflet-container {
+  background: #050a12;
+  font-family: theme("fontFamily.body");
+}
+
+.leaflet-control-attribution {
+  background: rgba(5, 10, 18, 0.72) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(16px);
+}
+
+.leaflet-control-attribution a {
+  color: #ff6b00 !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgba(11, 18, 32, 0.96) !important;
+  color: white !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+
+.leaflet-tooltip {
+  background: rgba(11, 18, 32, 0.96) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 107, 0, 0.25) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: rgba(255, 107, 0, 0.25) !important;
+}
