@@ -16,5 +16,7 @@ export const GPS_RECENTER_ZOOM = 16;
 export const REVERSE_GEOCODE_DEBOUNCE_MS = 1200;
 export const AUTO_REROUTE_COOLDOWN_MS = 20000;
 export const OFF_ROUTE_REROUTE_MIN_METERS = 120;
+export const GPS_GOOD_ACCURACY_METERS = 25;
+export const GPS_PRECISE_ACCURACY_METERS = 10;
 
 export const MAP_CENTER_ITALY: [number, number] = [41.9028, 12.4964];

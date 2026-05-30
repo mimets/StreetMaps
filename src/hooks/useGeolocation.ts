@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LIVE_TRAIL_MAX_POINTS, LIVE_TRAIL_MIN_STEP_METERS } from "../constants";
+import {
+  GPS_GOOD_ACCURACY_METERS,
+  GPS_PRECISE_ACCURACY_METERS,
+  LIVE_TRAIL_MAX_POINTS,
+  LIVE_TRAIL_MIN_STEP_METERS,
+} from "../constants";
 import type { LatLng, TrailPoint, TrackingStatus } from "../types";
 import { haversineDistanceMeters } from "../utils/geometry";
 
 type GeolocationState = {
   position: LatLng | null;
   accuracyMeters: number | null;
+  isGoodAccuracy: boolean;
+  isPreciseAccuracy: boolean;
   speedKmh: number | null;
   heading: number | null;
   trail: TrailPoint[];
@@ -38,6 +45,8 @@ export function useGeolocation(): GeolocationState {
   const [lastFixAt, setLastFixAt] = useState<number | null>(null);
   const [status, setStatus] = useState<TrackingStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [isGoodAccuracy, setIsGoodAccuracy] = useState(false);
+  const [isPreciseAccuracy, setIsPreciseAccuracy] = useState(false);
 
   const stopWatching = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -89,6 +98,9 @@ export function useGeolocation(): GeolocationState {
 
         setPosition(nextPosition);
         setAccuracyMeters(geoPosition.coords.accuracy);
+        const goodAccuracy = geoPosition.coords.accuracy <= GPS_GOOD_ACCURACY_METERS;
+        setIsGoodAccuracy(goodAccuracy);
+        setIsPreciseAccuracy(geoPosition.coords.accuracy <= GPS_PRECISE_ACCURACY_METERS);
         setSpeedKmh(toSpeedKmh(geoPosition.coords.speed));
         setHeading(geoPosition.coords.heading ?? null);
         setLastFixAt(Date.now());
@@ -152,6 +164,8 @@ export function useGeolocation(): GeolocationState {
   return {
     position,
     accuracyMeters,
+    isGoodAccuracy,
+    isPreciseAccuracy,
     speedKmh,
     heading,
     trail,

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { NOMINATIM_BASE_URL, REVERSE_GEOCODE_DEBOUNCE_MS } from "../constants";
+import { GPS_GOOD_ACCURACY_METERS, NOMINATIM_BASE_URL, REVERSE_GEOCODE_DEBOUNCE_MS } from "../constants";
 import type { GeocodeResult, LatLng } from "../types";
 
 type ReverseGeocodeState = {
   result: GeocodeResult | null;
   loading: boolean;
   error: string | null;
+  blockedByAccuracy: boolean;
 };
 
 type NominatimReverseResponse = {
@@ -24,19 +25,30 @@ type NominatimReverseResponse = {
   };
 };
 
-export function useReverseGeocode(position: LatLng | null): ReverseGeocodeState {
+export function useReverseGeocode(position: LatLng | null, accuracyMeters: number | null): ReverseGeocodeState {
   const [result, setResult] = useState<GeocodeResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockedByAccuracy, setBlockedByAccuracy] = useState(false);
 
   useEffect(() => {
     if (!position) {
       setResult(null);
       setLoading(false);
       setError(null);
+      setBlockedByAccuracy(false);
       return;
     }
 
+    if (typeof accuracyMeters === "number" && accuracyMeters > GPS_GOOD_ACCURACY_METERS) {
+      setResult(null);
+      setLoading(false);
+      setError(null);
+      setBlockedByAccuracy(true);
+      return;
+    }
+
+    setBlockedByAccuracy(false);
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       setLoading(true);
@@ -88,7 +100,7 @@ export function useReverseGeocode(position: LatLng | null): ReverseGeocodeState 
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [position?.lat, position?.lng]);
+  }, [accuracyMeters, position?.lat, position?.lng]);
 
-  return { result, loading, error };
+  return { result, loading, error, blockedByAccuracy };
 }
