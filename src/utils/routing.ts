@@ -1,12 +1,13 @@
 import {
   HIGH_SPEED_WARNING_THRESHOLD_KMH,
+  ORS_FIFTYCC_DEFAULT_FILTERS,
   ORS_AVOID_FEATURES,
   ORS_BASE_URL,
   ORS_API_KEY,
   ORS_SNAPPING_RADIUS_METERS,
   ROUTE_PROFILE,
 } from "../constants";
-import type { LatLng, RouteData, RouteDirection } from "../types";
+import type { LatLng, RouteData, RouteDirection, RouteFilterState } from "../types";
 import { formatEta } from "./format";
 
 type OrsRouteResponse = {
@@ -33,7 +34,12 @@ type OrsRouteResponse = {
   }>;
 };
 
-export function buildOrsRouteRequest(origin: LatLng, destination: LatLng) {
+export function buildOrsRouteRequest(origin: LatLng, destination: LatLng, filters: RouteFilterState) {
+  const avoidFeatures: string[] = [...ORS_AVOID_FEATURES];
+  if (filters.avoidFerries) {
+    avoidFeatures.push("ferries");
+  }
+
   return {
     coordinates: [
       [origin.lng, origin.lat],
@@ -48,14 +54,18 @@ export function buildOrsRouteRequest(origin: LatLng, destination: LatLng) {
     geometry_simplify: false,
     continue_straight: false,
     units: "m",
-    preference: "recommended",
+    preference: filters.preference,
     options: {
-      avoid_features: [...ORS_AVOID_FEATURES],
+      avoid_features: avoidFeatures,
     },
   };
 }
 
-export async function fetchOrsRoute(origin: LatLng, destination: LatLng): Promise<RouteData> {
+export async function fetchOrsRoute(
+  origin: LatLng,
+  destination: LatLng,
+  filters: RouteFilterState = ORS_FIFTYCC_DEFAULT_FILTERS,
+): Promise<RouteData> {
   if (ORS_API_KEY === "INSERISCI_LA_TUA_CHIAVE_ORS") {
     throw new Error("Inserisci una chiave valida in ORS_API_KEY.");
   }
@@ -67,7 +77,7 @@ export async function fetchOrsRoute(origin: LatLng, destination: LatLng): Promis
       "Content-Type": "application/json",
       Accept: "application/geo+json, application/json",
     },
-    body: JSON.stringify(buildOrsRouteRequest(origin, destination)),
+    body: JSON.stringify(buildOrsRouteRequest(origin, destination, filters)),
   });
 
   if (!response.ok) {
@@ -96,7 +106,7 @@ export async function fetchOrsRoute(origin: LatLng, destination: LatLng): Promis
     etaMinutes,
     directions,
     hasSpeedWarning,
-    summaryText: `${formatEta(etaMinutes)} stimati a 40 km/h`,
+    summaryText: `${formatEta(etaMinutes)} stimati a 40 km/h · ${filters.preference}`,
   };
 }
 

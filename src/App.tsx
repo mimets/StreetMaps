@@ -1,19 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Map } from "./components/Map";
+import { RouteFilters } from "./components/RouteFilters";
 import { RoutePanel } from "./components/RoutePanel";
 import { SearchBar } from "./components/SearchBar";
-import { AUTO_REROUTE_COOLDOWN_MS, OFF_ROUTE_REROUTE_MIN_METERS } from "./constants";
+import { AUTO_REROUTE_COOLDOWN_MS, OFF_ROUTE_REROUTE_MIN_METERS, ORS_FIFTYCC_DEFAULT_FILTERS } from "./constants";
 import { useGeolocation } from "./hooks/useGeolocation";
-import { useReverseGeocode } from "./hooks/useReverseGeocode";
 import { useRouting } from "./hooks/useRouting";
-import type { DestinationOption } from "./types";
+import type { DestinationOption, RouteFilterState } from "./types";
+
+const INITIAL_FILTERS: RouteFilterState = {
+  preference: ORS_FIFTYCC_DEFAULT_FILTERS.preference,
+  avoidFerries: ORS_FIFTYCC_DEFAULT_FILTERS.avoidFerries,
+};
 
 export default function App() {
   const geolocation = useGeolocation();
   const {
     position,
     accuracyMeters,
-    isPreciseAccuracy,
     speedKmh,
     heading,
     trail,
@@ -23,43 +27,59 @@ export default function App() {
     isWatching,
     toggleTracking,
   } = geolocation;
-  const { result: currentAddress, loading: currentAddressLoading, error: currentAddressError } =
-    useReverseGeocode(position, accuracyMeters);
+
   const { route, loading, error, offRoute, offRouteDistanceMeters, calculateRoute, clearRoute } =
     useRouting(position);
   const [destination, setDestination] = useState<DestinationOption | null>(null);
   const [followUser, setFollowUser] = useState(true);
   const [centerSignal, setCenterSignal] = useState(0);
+  const [routeFilters, setRouteFilters] = useState<RouteFilterState>(INITIAL_FILTERS);
   const lastAutoRerouteRef = useRef<number>(0);
+
+  const routeFilterLabel = useMemo(() => {
+    const preferenceLabel =
+      routeFilters.preference === "fastest"
+        ? "Più rapido"
+        : routeFilters.preference === "shortest"
+          ? "Più breve"
+          : "Equilibrato";
+    return `${preferenceLabel}${routeFilters.avoidFerries ? " · no traghetti" : ""}`;
+  }, [routeFilters]);
+
+  async function calculateForDestination(nextDestination: DestinationOption, filters = routeFilters) {
+    if (!position) {
+      return;
+    }
+
+    await calculateRoute(
+      position,
+      {
+        lat: nextDestination.lat,
+        lng: nextDestination.lng,
+      },
+      filters,
+    );
+  }
 
   async function handleSelectDestination(nextDestination: DestinationOption) {
     setDestination(nextDestination);
-    if (position) {
-      await calculateRoute(position, {
-        lat: nextDestination.lat,
-        lng: nextDestination.lng,
-      });
-    }
     setFollowUser(true);
+    await calculateForDestination(nextDestination);
   }
 
   async function handleRecalculate() {
-    if (position && destination) {
-      await calculateRoute(position, {
-        lat: destination.lat,
-        lng: destination.lng,
-      });
+    if (destination) {
+      await calculateForDestination(destination);
     }
   }
 
   function handleShareTrip() {
     const shareTextParts = ["Cinquantino GPS"];
+    shareTextParts.push(`Filtro: ${routeFilterLabel}`);
     if (route) {
       shareTextParts.push(`Percorso: ${Math.round(route.distanceMeters / 1000)} km, ETA ${Math.round(route.etaMinutes)} min`);
     }
-    if (currentAddress?.label) {
-      shareTextParts.push(`Posizione: ${currentAddress.label}`);
-    } else if (position) {
+    if (position) {
       shareTextParts.push(`Posizione: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`);
     }
 
@@ -78,12 +98,9 @@ export default function App() {
 
   useEffect(() => {
     if (position && destination && !route && !loading) {
-      void calculateRoute(position, {
-        lat: destination.lat,
-        lng: destination.lng,
-      });
+      void calculateForDestination(destination);
     }
-  }, [calculateRoute, destination, loading, position, route]);
+  }, [destination, loading, position, route]);
 
   useEffect(() => {
     if (!position || !destination || !route || !offRoute || loading) {
@@ -100,11 +117,14 @@ export default function App() {
     }
 
     lastAutoRerouteRef.current = now;
-    void calculateRoute(position, {
-      lat: destination.lat,
-      lng: destination.lng,
-    });
-  }, [calculateRoute, destination, loading, offRoute, offRouteDistanceMeters, position, route]);
+    void calculateForDestination(destination);
+  }, [destination, loading, offRoute, offRouteDistanceMeters, position, route]);
+
+  useEffect(() => {
+    if (position && destination) {
+      void calculateForDestination(destination);
+    }
+  }, [routeFilters.preference, routeFilters.avoidFerries]);
 
   function centerOnUser() {
     setFollowUser(true);
@@ -166,7 +186,7 @@ export default function App() {
                 <span className="text-red-200">{geoError}</span>
               ) : position ? (
                 <>
-                  Posizione acquisita{" "}
+                  GPS attivo{" "}
                   <span className="text-white/45">
                     · precisione {Math.round(accuracyMeters ?? 0)} m
                   </span>
@@ -177,31 +197,24 @@ export default function App() {
             </div>
           </section>
 
-          <aside className="absolute inset-x-0 bottom-0 z-[1200] flex max-h-[68vh] min-h-0 flex-col border-t border-white/8 bg-surface-950 px-4 pb-5 pt-4 backdrop-blur-xl md:static md:max-h-none md:w-[430px] md:border-l md:border-t-0 md:px-5">
-            <div className="mb-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-50">
-              Percorso calcolato evitando autostrade e superstrade (tipo A e B).
-              Rispetta sempre la segnaletica locale.
-            </div>
+          <aside className="absolute inset-x-0 bottom-0 z-[1200] flex max-h-[74vh] min-h-0 flex-col gap-3 border-t border-white/8 bg-surface-950 px-4 pb-5 pt-4 backdrop-blur-xl md:static md:max-h-none md:w-[430px] md:border-l md:border-t-0 md:px-5">
+            <SearchBar onSelectDestination={handleSelectDestination} />
+            <RouteFilters filters={routeFilters} onChange={setRouteFilters} />
 
-            <div className="mb-4">
-              <SearchBar onSelectDestination={handleSelectDestination} />
-            </div>
-
-            <div className="mb-4 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+            <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
               {geoError
                 ? geoError
                 : status === "watching"
-                ? "GPS attivo e in aggiornamento continuo."
-                : status === "paused"
-                  ? "GPS in pausa."
-                  : "Attiva la posizione per seguire il tragitto."}
+                  ? "GPS attivo e pronto al calcolo."
+                  : status === "paused"
+                    ? "GPS in pausa."
+                    : "Attiva la posizione per seguire il tragitto."}
             </div>
 
             {position && accuracyMeters !== null && accuracyMeters > 25 ? (
-              <div className="mb-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-50">
+              <div className="rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-50">
                 Posizione approssimativa: precisione {Math.round(accuracyMeters)} m.
-                Calcolo comunque il percorso, ma il punto di partenza puo essere spostato.
-                {isPreciseAccuracy ? " Il fix attuale e comunque molto buono." : ""}
+                Il percorso viene calcolato comunque, ma il punto di partenza può essere spostato.
               </div>
             ) : null}
 
@@ -224,15 +237,6 @@ export default function App() {
                 heading={heading}
                 accuracyMeters={accuracyMeters}
                 lastFixAt={lastFixAt}
-                currentAddress={currentAddress}
-                currentAddressLoading={currentAddressLoading}
-                currentAddressError={
-                  currentAddressError
-                    ? currentAddressError
-                    : accuracyMeters !== null && accuracyMeters > 25
-                      ? "Posizione approssimativa: indirizzo non verificato."
-                      : null
-                }
                 trailCount={trail.length}
                 onToggleTracking={toggleTracking}
                 onShareTrip={handleShareTrip}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Cinquantino GPS">
+  <rect width="64" height="64" rx="16" fill="#050A12"/>
+  <path d="M18 38c0-7.7 6.3-14 14-14 4.2 0 8 1.8 10.5 4.8l4.2-2.2 3.2 5.8-4.3 2.3A14 14 0 0 1 46 38c0 7.7-6.3 14-14 14S18 45.7 18 38Z" fill="#FF6B00"/>
+  <circle cx="28" cy="47" r="4" fill="#fff"/>
+  <circle cx="43" cy="47" r="4" fill="#fff"/>
+  <path d="M25 29h11l4 7H23l2-7Z" fill="#fff" opacity=".92"/>
+</svg>

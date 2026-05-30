@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { OFF_ROUTE_THRESHOLD_METERS } from "../constants";
-import type { LatLng, RouteData } from "../types";
+import type { LatLng, RouteData, RouteFilterState } from "../types";
 import { distanceToRouteMeters } from "../utils/geometry";
 import { fetchOrsRoute } from "../utils/routing";
 
@@ -10,7 +10,7 @@ type RoutingState = {
   error: string | null;
   offRoute: boolean;
   offRouteDistanceMeters: number | null;
-  calculateRoute: (origin: LatLng, destination: LatLng) => Promise<void>;
+  calculateRoute: (origin: LatLng, destination: LatLng, filters?: RouteFilterState) => Promise<void>;
   clearRoute: () => void;
 };
 
@@ -21,12 +21,12 @@ export function useRouting(currentPosition: LatLng | null): RoutingState {
   const [offRoute, setOffRoute] = useState(false);
   const [offRouteDistanceMeters, setOffRouteDistanceMeters] = useState<number | null>(null);
 
-  const calculateRoute = useCallback(async (origin: LatLng, nextDestination: LatLng) => {
+  const calculateRoute = useCallback(async (origin: LatLng, nextDestination: LatLng, filters?: RouteFilterState) => {
     setLoading(true);
     setError(null);
 
     try {
-      const result = await fetchOrsRoute(origin, nextDestination);
+      const result = await fetchOrsRoute(origin, nextDestination, filters);
       setRoute(result);
       setOffRoute(false);
       setOffRouteDistanceMeters(null);

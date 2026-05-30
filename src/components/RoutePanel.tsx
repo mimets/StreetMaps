@@ -1,5 +1,5 @@
 import { formatDistance, formatEta } from "../utils/format";
-import type { GeocodeResult, RouteData, TrackingStatus } from "../types";
+import type { RouteData, TrackingStatus } from "../types";
 
 type RoutePanelProps = {
   route: RouteData | null;
@@ -16,9 +16,6 @@ type RoutePanelProps = {
   heading: number | null;
   accuracyMeters: number | null;
   lastFixAt: number | null;
-  currentAddress: GeocodeResult | null;
-  currentAddressLoading: boolean;
-  currentAddressError: string | null;
   trailCount: number;
   onToggleTracking: () => void;
   onShareTrip: () => void;
@@ -53,9 +50,6 @@ export function RoutePanel({
   heading,
   accuracyMeters,
   lastFixAt,
-  currentAddress,
-  currentAddressLoading,
-  currentAddressError,
   trailCount,
   onToggleTracking,
   onShareTrip,
@@ -110,17 +104,6 @@ export function RoutePanel({
             <div className="mt-2 text-xl font-bold text-white">
               {hasLocation ? "Live" : "In attesa"}
             </div>
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-2xl border border-white/8 bg-surface-900/70 p-4">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-white/40">Posizione attuale</div>
-          <div className="mt-2 text-sm leading-6 text-white/85">
-            {currentAddressLoading
-              ? "Sto leggendo l'indirizzo..."
-              : currentAddressError
-                ? currentAddressError
-                : currentAddress?.label ?? "Indirizzo non ancora disponibile"}
           </div>
         </div>
       </div>
@@ -185,8 +168,7 @@ export function RoutePanel({
             Pronto all'uso
           </div>
           <p className="mt-2 text-sm leading-6">
-            Cerca una destinazione in Italia e avvia un percorso limitato a strade
-            legalmente accessibili ai ciclomotori.
+            Cerca una destinazione in Italia, scegli un filtro e avvia un percorso per 50cc.
           </p>
           <button
             type="button"
@@ -227,7 +209,7 @@ export function RoutePanel({
                   {index + 1}. {direction.text}
                 </div>
                 <div className="mt-1 text-xs text-white/48">
-                  {formatDistance(direction.distanceMeters)} · {Math.round(direction.speedKmh)} km/h stimati ·
+                  {formatDistance(direction.distanceMeters)} · {Math.round(direction.speedKmh)} km/h stimati ·{" "}
                   {formatEta((direction.durationSeconds / 60) || 0)}
                 </div>
               </div>

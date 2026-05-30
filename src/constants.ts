@@ -5,6 +5,10 @@ export const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/search";
 
 export const ROUTE_PROFILE = "driving-car";
 export const ORS_AVOID_FEATURES = ["highways", "tollways"] as const;
+export const ORS_FIFTYCC_DEFAULT_FILTERS = {
+  preference: "recommended",
+  avoidFerries: true,
+} as const;
 
 export const LIVE_SPEED_KMH = 40;
 export const LEGAL_MAX_SPEED_KMH = 45;
@@ -19,5 +23,10 @@ export const OFF_ROUTE_REROUTE_MIN_METERS = 120;
 export const GPS_GOOD_ACCURACY_METERS = 25;
 export const GPS_PRECISE_ACCURACY_METERS = 10;
 export const ORS_SNAPPING_RADIUS_METERS = 400;
+export const ROUTE_FILTER_OPTIONS = [
+  { id: "recommended", label: "Equilibrato", hint: "Più stabile per 50cc" },
+  { id: "fastest", label: "Più rapido", hint: "Tempo minimo" },
+  { id: "shortest", label: "Più breve", hint: "Meno km" },
+] as const;
 
 export const MAP_CENTER_ITALY: [number, number] = [41.9028, 12.4964];

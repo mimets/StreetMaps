@@ -11,6 +11,13 @@ export type TrailPoint = LatLng & {
 
 export type TrackingStatus = "idle" | "watching" | "paused" | "error";
 
+export type RoutePreference = "recommended" | "fastest" | "shortest";
+
+export type RouteFilterState = {
+  preference: RoutePreference;
+  avoidFerries: boolean;
+};
+
 export type DestinationOption = {
   placeId: string;
   label: string;
