@@ -3,6 +3,7 @@ import {
   ORS_AVOID_FEATURES,
   ORS_BASE_URL,
   ORS_API_KEY,
+  ORS_SNAPPING_RADIUS_METERS,
   ROUTE_PROFILE,
 } from "../constants";
 import type { LatLng, RouteData, RouteDirection } from "../types";
@@ -38,6 +39,7 @@ export function buildOrsRouteRequest(origin: LatLng, destination: LatLng) {
       [origin.lng, origin.lat],
       [destination.lng, destination.lat],
     ],
+    radiuses: [ORS_SNAPPING_RADIUS_METERS, ORS_SNAPPING_RADIUS_METERS],
     instructions: true,
     instructions_format: "text",
     language: "it",

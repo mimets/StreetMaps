@@ -13,7 +13,6 @@ export default function App() {
   const {
     position,
     accuracyMeters,
-    isGoodAccuracy,
     isPreciseAccuracy,
     speedKmh,
     heading,
@@ -78,16 +77,16 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (position && destination && isGoodAccuracy && !route && !loading) {
+    if (position && destination && !route && !loading) {
       void calculateRoute(position, {
         lat: destination.lat,
         lng: destination.lng,
       });
     }
-  }, [calculateRoute, destination, isGoodAccuracy, loading, position, route]);
+  }, [calculateRoute, destination, loading, position, route]);
 
   useEffect(() => {
-    if (!position || !destination || !route || !offRoute || loading || !isGoodAccuracy) {
+    if (!position || !destination || !route || !offRoute || loading) {
       return;
     }
 
@@ -105,7 +104,7 @@ export default function App() {
       lat: destination.lat,
       lng: destination.lng,
     });
-  }, [calculateRoute, destination, isGoodAccuracy, loading, offRoute, offRouteDistanceMeters, position, route]);
+  }, [calculateRoute, destination, loading, offRoute, offRouteDistanceMeters, position, route]);
 
   function centerOnUser() {
     setFollowUser(true);
@@ -192,19 +191,17 @@ export default function App() {
               {geoError
                 ? geoError
                 : status === "watching"
-                ? isGoodAccuracy
-                  ? "GPS attivo e in aggiornamento continuo."
-                  : "Segnale GPS troppo largo: aspetta un fix migliore."
+                ? "GPS attivo e in aggiornamento continuo."
                 : status === "paused"
                   ? "GPS in pausa."
                   : "Attiva la posizione per seguire il tragitto."}
             </div>
 
-            {!isGoodAccuracy && position ? (
+            {position && accuracyMeters !== null && accuracyMeters > 25 ? (
               <div className="mb-4 rounded-3xl border border-amber-400/20 bg-amber-400/10 px-4 py-3 text-sm leading-6 text-amber-50">
-                La precisione attuale non basta per una navigazione affidabile.
-                Aspetta un fix piu stretto di {Math.round(accuracyMeters ?? 0)} m.
-                {isPreciseAccuracy ? " Il fix e molto buono." : " Evito di indovinare la tua posizione."}
+                Posizione approssimativa: precisione {Math.round(accuracyMeters)} m.
+                Calcolo comunque il percorso, ma il punto di partenza puo essere spostato.
+                {isPreciseAccuracy ? " Il fix attuale e comunque molto buono." : ""}
               </div>
             ) : null}
 
@@ -233,7 +230,7 @@ export default function App() {
                   currentAddressError
                     ? currentAddressError
                     : accuracyMeters !== null && accuracyMeters > 25
-                      ? "Indirizzo non mostrato: precisione GPS insufficiente."
+                      ? "Posizione approssimativa: indirizzo non verificato."
                       : null
                 }
                 trailCount={trail.length}
